@@ -1,0 +1,103 @@
+Sub ProcessStocks()
+    Dim ws As Worksheet
+    Dim ticker As String
+    Dim openPrice As Double
+    Dim closePrice As Double
+    Dim totalVolume As Double
+    Dim lastRow As Long
+    Dim i As Long
+    Dim summaryRow As Long
+    Dim startRow As Long
+    
+    Dim greatestIncrease As Double
+    Dim greatestDecrease As Double
+    Dim greatestVolume As Double
+    Dim greatestIncreaseTicker As String
+    Dim greatestDecreaseTicker As String
+    Dim greatestVolumeTicker As String
+    
+    For Each ws In ThisWorkbook.Worksheets
+        lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+        summaryRow = 2
+        
+        ws.Cells(1, 8).Value = "Ticker"
+        ws.Cells(1, 9).Value = "Quarterly Change"
+        ws.Cells(1, 10).Value = "Percent Change"
+        ws.Cells(1, 11).Value = "Total Stock Volume"
+        
+        greatestIncrease = 0
+        greatestDecrease = 0
+        greatestVolume = 0
+        
+        i = 2
+        While i <= lastRow
+            ticker = ws.Cells(i, 1).Value
+            openPrice = ws.Cells(i, 3).Value
+            startRow = i
+            totalVolume = 0
+            
+            ' Find the last row for the current ticker
+            Do While ws.Cells(i, 1).Value = ticker And i <= lastRow
+                totalVolume = totalVolume + ws.Cells(i, 7).Value
+                i = i + 1
+            Loop
+            
+            closePrice = ws.Cells(i - 1, 6).Value
+            ws.Cells(summaryRow, 8).Value = ticker
+            ws.Cells(summaryRow, 9).Value = closePrice - openPrice
+            If openPrice <> 0 Then
+                ws.Cells(summaryRow, 10).Value = ((closePrice - openPrice) / openPrice) * 100
+            Else
+                ws.Cells(summaryRow, 10).Value = 0
+            End If
+            ws.Cells(summaryRow, 11).Value = totalVolume
+            
+            ' Check for greatest values
+            If ws.Cells(summaryRow, 10).Value > greatestIncrease Then
+                greatestIncrease = ws.Cells(summaryRow, 10).Value
+                greatestIncreaseTicker = ticker
+            End If
+            If ws.Cells(summaryRow, 10).Value < greatestDecrease Then
+                greatestDecrease = ws.Cells(summaryRow, 10).Value
+                greatestDecreaseTicker = ticker
+            End If
+            If ws.Cells(summaryRow, 11).Value > greatestVolume Then
+                greatestVolume = ws.Cells(summaryRow, 11).Value
+                greatestVolumeTicker = ticker
+            End If
+            
+            summaryRow = summaryRow + 1
+        Wend
+        
+        ' Greatest Values
+        ws.Cells(2, 13).Value = "Greatest % Increase"
+        ws.Cells(2, 14).Value = greatestIncreaseTicker
+        ws.Cells(2, 15).Value = greatestIncrease
+        
+        ws.Cells(3, 13).Value = "Greatest % Decrease"
+        ws.Cells(3, 14).Value = greatestDecreaseTicker
+        ws.Cells(3, 15).Value = greatestDecrease
+        
+        ws.Cells(4, 13).Value = "Greatest Total Volume"
+        ws.Cells(4, 14).Value = greatestVolumeTicker
+        ws.Cells(4, 15).Value = greatestVolume
+        
+        ' Conditional Formatting
+        Dim rng As Range
+        Set rng = ws.Range(ws.Cells(2, 9), ws.Cells(summaryRow - 1, 9))
+        With rng.FormatConditions.Add(Type:=xlCellValue, Operator:=xlGreater, Formula1:="0")
+            .Interior.Color = RGB(0, 255, 0)
+        End With
+        With rng.FormatConditions.Add(Type:=xlCellValue, Operator:=xlLess, Formula1:="0")
+            .Interior.Color = RGB(255, 0, 0)
+        End With
+        
+        Set rng = ws.Range(ws.Cells(2, 10), ws.Cells(summaryRow - 1, 10))
+        With rng.FormatConditions.Add(Type:=xlCellValue, Operator:=xlGreater, Formula1:="0")
+            .Interior.Color = RGB(0, 255, 0)
+        End With
+        With rng.FormatConditions.Add(Type:=xlCellValue, Operator:=xlLess, Formula1:="0")
+            .Interior.Color = RGB(255, 0, 0)
+        End With
+    Next ws
+End Sub
